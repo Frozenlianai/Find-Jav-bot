@@ -1,8 +1,6 @@
 /** Telegram机器人的Token */
-const token = '机器人Token';
-const robotName = '@xxxx';
-
-
+const token = '机器人token';
+const robotName = '机器人名字';
 
 const TelegramBot = require('node-telegram-bot-api');
 const cheerio = require('cheerio');
@@ -10,6 +8,7 @@ const axios = require('axios');
 const moment = require('moment');
 moment.locale('zh-cn');
 const vm = require('vm');
+const javbusURL = "https://www.javbus.com";
 const http = axios.create({
     baseURL: 'https://www.javbus.com/',
     timeout: 5000,
@@ -128,7 +127,7 @@ async function parseHtml(id) {
     let $image = $('a.bigImage img');
     // console.log({$image});
     result.title = $image.attr('title');
-    result.cover = $image.attr('src');
+    result.cover = javbusURL + $image.attr('src');
 
     let ajax = {gid: '', uc: '', img: ''};
     const context = new vm.createContext(ajax);
