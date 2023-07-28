@@ -1,7 +1,6 @@
 /** Telegram机器人的Token */
-const token = '机器人token';
+const token = '机器人的Token';
 const robotName = '机器人名字';
-
 const TelegramBot = require('node-telegram-bot-api');
 const cheerio = require('cheerio');
 const axios = require('axios');
@@ -152,3 +151,95 @@ async function parseHtml(id) {
     // console.log(result);
     return result;
 }
+
+
+// 统计机器人的总用户数量和正在使用机器人的用户信息
+bot.onText(/\/usercount/, async (msg) => {
+  const chatId = msg.chat.id;
+  const users = await bot.getUpdates();
+  let message = '机器人的总用户数量：' + users.length + '\n\n';
+
+  message += '正在使用机器人的用户信息：\n\n';
+  for (let i = 0; i < users.length; i++) {
+    const user = users[i].message.from;
+    const userName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+    const userLink = `https://t.me/${user.username}`;
+    message += `用户名称: ${userName}\n链接: ${userLink}\n\n`;
+  }
+
+  bot.sendMessage(chatId, message);
+});
+
+// 记录所有群组的聊天 ID 和名称
+const chatGroups = [];
+
+// 当前页数和每页显示的结果数量
+let currentPage = 1;
+const resultsPerPage = 20;
+
+// 监听所有聊天消息，记录群组的聊天 ID 和名称
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+  const chatType = msg.chat.type;
+  const chatTitle = msg.chat.title;
+
+  if (!chatGroups.some(group => group.chatId === chatId)) {
+    chatGroups.push({ chatId, chatTitle });
+  }
+});
+
+// 处理翻页指令
+bot.onText(/\/next/, (msg) => {
+  const chatId = msg.chat.id;
+  const totalResults = chatGroups.length;
+  const totalPages = Math.ceil(totalResults / resultsPerPage);
+
+  if (currentPage < totalPages) {
+    currentPage++;
+  }
+
+  sendResults(chatId);
+});
+
+bot.onText(/\/prev/, (msg) => {
+  const chatId = msg.chat.id;
+
+  if (currentPage > 1) {
+    currentPage--;
+  }
+
+  sendResults(chatId);
+});
+
+// 发送当前页的结果
+function sendResults(chatId) {
+  const startIndex = (currentPage - 1) * resultsPerPage;
+  const endIndex = startIndex + resultsPerPage;
+  const currentResults = chatGroups.slice(startIndex, endIndex);
+
+  let response = `机器人加入的群组数量：${chatGroups.length}\n\n`;
+  response += `当前页 (${currentPage}/${Math.ceil(chatGroups.length / resultsPerPage)})：\n`;
+
+  currentResults.forEach(group => {
+    response += `${group.chatTitle}\n`;
+  });
+
+  response += `\n使用 /next 和 /prev 进行翻页。`;
+
+  bot.sendMessage(chatId, response);
+}
+
+// 统计群组数量和名称
+bot.onText(/\/groupcount/, (msg) => {
+  const chatId = msg.chat.id;
+  currentPage = 1; // 重置当前页数为第一页
+  sendResults(chatId);
+});
+
+
+// 运行机器人
+bot.on('polling_error', (error) => {
+  console.log(error);
+});
+
+console.log('机器人已启动');
