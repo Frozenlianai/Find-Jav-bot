@@ -1,13 +1,14 @@
 /** Telegram机器人的Token */
-const token = '机器人的Token';
-const robotName = '机器人名字';
+const { token, robotName, javbusURL } = require('./config');
 const TelegramBot = require('node-telegram-bot-api');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const moment = require('moment');
 moment.locale('zh-cn');
 const vm = require('vm');
-const javbusURL = "https://www.javbus.com";
+const axiosRetry = require('axios-retry');
+const fs = require('fs');
+
 const http = axios.create({
     baseURL: 'https://www.javbus.com/',
     timeout: 5000,
@@ -18,27 +19,41 @@ const http = axios.create({
     }
 });
 
+axiosRetry(http, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
+
 const bot = new TelegramBot(token, {polling: true});
 
 //开始入口
 bot.onText(/\/start/, msg => {
-    bot.sendMessage(msg.chat.id, '欢迎使用番号机器人\n请输入 / 查看命令提示');
+    bot.sendMessage(msg.chat.id, '欢迎使用番号机器人\n请输入 /help 查看命令提示');
 });
 
+bot.onText(/\/help/, msg => {
+    bot.sendMessage(msg.chat.id, '可用命令：\n/start - 欢迎信息\n/help - 命令帮助\n/state [n] - 最近n天工作状态\n/av [番号] - 查询番号\n/usercount - 用户统计\n/groupcount - 群组统计\n/next - 下一页\n/prev - 上一页');
+});
 
 //简单保存工作状态
 const state = {start: Date.now(), date: {}};
 
+// 状态和群组持久化
+const stateFile = 'state.json';
+const groupsFile = 'groups.json';
+function saveState() { fs.writeFileSync(stateFile, JSON.stringify(state)); }
+function loadState() { if (fs.existsSync(stateFile)) Object.assign(state, JSON.parse(fs.readFileSync(stateFile))); }
+function saveGroups() { fs.writeFileSync(groupsFile, JSON.stringify(chatGroups)); }
+function loadGroups() { if (fs.existsSync(groupsFile)) { chatGroups.splice(0, chatGroups.length, ...JSON.parse(fs.readFileSync(groupsFile))); } }
+loadState();
+loadGroups();
+
 bot.onText(/\/state/, msg => {//最近5天工作状态
     let buffer = drawState(5);
-    return bot.sendMessage(msg.chat.id, buffer);
+    bot.sendMessage(msg.chat.id, buffer);
 });
 bot.onText(/\/state (\d+)/, (msg, match) => {//工作状态
     let days = parseInt(match[1].trim()); // the captured "whatever"
     console.log({days});
     let buffer = drawState(days);
-
-    return bot.sendMessage(msg.chat.id, buffer);
+    bot.sendMessage(msg.chat.id, buffer);
 });
 
 /**
@@ -71,10 +86,8 @@ let idRegex = /^([a-z]+)(?:-|_|\s)?([0-9]+)$/;
 // Matches "/echo [whatever]"
 bot.onText(/\/av (.+)/, async (msg, match) => {
     const today = moment().format('YYYY-MM-DD');
-    if (state.date[today])
-        state.date[today]++;
-    else
-        state.date[today] = 1;
+    state.date[today] = (state.date[today] || 0) + 1;
+    saveState();
     const chatId = msg.chat.id;
     let chartType = msg.chat.type;
     let isPrivate = chartType === 'private';
@@ -185,6 +198,7 @@ bot.on('message', (msg) => {
 
   if (!chatGroups.some(group => group.chatId === chatId)) {
     chatGroups.push({ chatId, chatTitle });
+    saveGroups();
   }
 });
 
@@ -196,9 +210,10 @@ bot.onText(/\/next/, (msg) => {
 
   if (currentPage < totalPages) {
     currentPage++;
+    sendResults(chatId);
+  } else {
+    bot.sendMessage(chatId, '已经是最后一页');
   }
-
-  sendResults(chatId);
 });
 
 bot.onText(/\/prev/, (msg) => {
@@ -206,9 +221,10 @@ bot.onText(/\/prev/, (msg) => {
 
   if (currentPage > 1) {
     currentPage--;
+    sendResults(chatId);
+  } else {
+    bot.sendMessage(chatId, '已经是第一页');
   }
-
-  sendResults(chatId);
 });
 
 // 发送当前页的结果
