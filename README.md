@@ -16,7 +16,7 @@
 
 ### 1. 克隆项目
 ```bash
-git clone https://github.com/nrop19/Find-Jav-bot.git](https://github.com/Frozenlianai/Find-Jav-bot-TG-
+git clone https://github.com/Frozenlianai/Find-Jav-bot-TG-
 cd Find-Jav-bot
 ```
 
