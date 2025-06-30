@@ -1,23 +1,54 @@
 {
-  "name": "telegram-bot",
-  "version": "1.0.0",
-  "description": "Telegram 番号机器人",
+  "name": "find-jav-bot",
+  "version": "2.0.0",
+  "description": "Telegram 番号查询机器人 - 优化版本",
+  "main": "src/index.js",
   "scripts": {
-    "test": "pm2 start pm2.json && pm2 logs",
-    "kill": "pm2 kill",
-    "logs": "pm2 logs"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:logs": "pm2 logs",
+    "pm2:kill": "pm2 kill",
+    "test": "jest",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
-  "dependencies": {
-    "axios": "^0.18.0",
-    "canvas": "^1.6.10",
-    "cheerio": "^1.0.0-rc.2",
-    "echarts": "^4.0.4",
-    "koa": "^2.5.0",
-    "lodash": "^4.17.5",
-    "moment": "^2.22.1",
-    "node-telegram-bot-api": "^0.30.0",
-    "pm2": "^2.10.2"
-  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "jav",
+    "search",
+    "magnet"
+  ],
   "author": "com.nrop19@gmail.com",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "koa": "^2.14.2",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "node-telegram-bot-api": "^0.64.0",
+    "pm2": "^5.3.0",
+    "winston": "^3.11.0",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "eslint": "^8.55.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
 }
